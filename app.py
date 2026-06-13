@@ -122,28 +122,26 @@ st.markdown("""
 st.markdown("""
     <div class="brand-header">
         <h1>Prompt<span>Craft</span> Chat</h1>
-        <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Enter your API key below and select a scenario tab to evaluate prompts</p>
+        <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Enter your API key below, write your intent, and get direct final outputs</p>
     </div>
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. LIVE USER API KEY INPUT FIELD (Tijori Box)
+# 3. LIVE USER API KEY INPUT FIELD
 # =====================================================================
-# Yeh input field website ke screen par top par hi dikhegi
 user_api_key = st.text_input(
     "🔑 Enter Your Gemini API Key:", 
     type="password", 
     placeholder="AIzaSy..."
 )
 
-# API key validation logic
 if user_api_key:
     genai.configure(api_key=user_api_key)
 else:
     st.info("💡 Pro-Tip: To test the app, please enter your Gemini API Key in the box above.")
 
 # =====================================================================
-# 4. HORIZONTAL SCENARIO TABS (WHATSAPP LOOK)
+# 4. HORIZONTAL SCENARIO TABS
 # =====================================================================
 tab_labels = ["📝 Creative", "💻 Tech Code", "📢 Marketing", "📊 Analytics", "🎓 Academic"]
 tabs = st.tabs(tab_labels)
@@ -178,13 +176,14 @@ def render_workspace(active_index):
 
     st.write("")
     
-    if st.button("Evaluate Structure ✔️", key=f"btn_{active_index}"):
+    if st.button("Evaluate & Generate Output ✔️", key=f"btn_{active_index}"):
         if not user_api_key:
             st.error("🛑 API Key Missing: Pehle sabse upar apna Gemini API Key enter karein!")
         elif not user_prompt.strip():
             st.warning("Please draft a text payload sequence first.")
         else:
-            with st.spinner("Analyzing message architecture..."):
+            with st.spinner("Analyzing structures and rendering production files..."):
+                # Phase 1: Matrix Metrics Evaluation Call
                 res = run_evaluation(chosen_scope['name'], user_prompt)
                 
                 if "error" in res:
@@ -206,10 +205,25 @@ def render_workspace(active_index):
                         st.markdown(f'<div class="whatsapp-yellow-box">⚠ {item}</div>', unsafe_allow_html=True)
                     
                     st.markdown("<p style='color:#e9edef; font-weight:600; margin-bottom:6px; margin-top:15px;'>✨ Re-Engineered Message Payload:</p>", unsafe_allow_html=True)
-                    st.code(res.get("improved_prompt", ""), language="text")
+                    improved_prompt_text = res.get("improved_prompt", "")
+                    st.code(improved_prompt_text, language="text")
+                    
+                    # 🚀 NEW PHASE: Direct Code/Content Generation Box
+                    st.markdown("---")
+                    st.markdown("<h3 style='color:#00a884; font-size:1.3rem; margin-top:20px; margin-bottom:10px;'>🚀 Direct Code & Content Output</h3>", unsafe_allow_html=True)
+                    st.write("Aapke re-engineered prompt ka use karke AI ne direct ye output ready kiya hai:")
+                    
+                    # Direct final answer call using the improved prompt version
+                    final_execution_output = generate_final_content(improved_prompt_text)
+                    
+                    # Dynamic script language selection for syntax coloring
+                    code_lang = "python" if active_index == 1 else "text"
+                    st.code(final_execution_output, language=code_lang)
+                    
+                    st.balloons()
 
 # =====================================================================
-# 5. LLM DISPATCH ENGINE
+# 5. CORE LLM DISPATCH ENGINES
 # =====================================================================
 def run_evaluation(scope_name, raw_prompt):
     system_instruction = f"""
@@ -230,6 +244,19 @@ def run_evaluation(scope_name, raw_prompt):
         return json.loads(clean)
     except Exception as e:
         return {"error": f"Execution delay. Connection details: {str(e)}"}
+
+def generate_final_content(optimized_prompt):
+    """
+    Yeh function optimized prompt ko le kar direct code/content compute karega 
+    aur return karega, taaki user ko seedhe final material mil sake.
+    """
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(optimized_prompt)
+        # Markdown backticks code formatting filter remove karne ke liye custom utility
+        return response.text.replace("```python", "").replace("```", "").strip()
+    except Exception as e:
+        return f"Output Generation Stopped. Logs: {str(e)}"
 
 # Assigning workspaces into separate tab sections
 for idx, tab_object in enumerate(tabs):
