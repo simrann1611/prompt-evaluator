@@ -5,9 +5,10 @@ import json
 # =====================================================================
 # 1. API CONFIGURATION
 # =====================================================================
+# Real testing ke liye yahan apni Gemini API Key paste karein
 GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE" 
 
-if GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
+if GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE" and GEMINI_API_KEY.strip() != "":
     genai.configure(api_key=GEMINI_API_KEY)
 
 # =====================================================================
@@ -130,26 +131,18 @@ st.markdown("""
 st.markdown("""
     <div class="brand-header">
         <h1>Prompt<span>Craft</span> Chat</h1>
-        <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Tap on a scenario tab below to analyze your string syntax</p>
+        <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Select a scenario tab below to analyze your prompt structure</p>
     </div>
 """, unsafe_allow_html=True)
 
-# Missing API Banner (Minimalistic Amber Yellow alert)
-#if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
-    #st.markdown("""
-        #<div style='background-color: rgba(255,193,7,0.15); border: 1px solid #ffc107; padding: 12px; border-radius: 10px; color: #ffe082; font-size:0.9rem; text-align:center; margin-bottom:20px;'>
-          $  ⚠️ <b>System Alert:</b> Please connect your Gemini API key string inside the script code.
-       # </div>
- #   """, unsafe_allow_html=True)
+# NOTE: Yellow Missing API Banner Has Been Completely Removed From Here!
 
 # =====================================================================
-# 4. HORIZONTAL SCENARIO TABS (WHATSAPP CALLS/CHATS LOOK)
+# 4. HORIZONTAL SCENARIO TABS (WHATSAPP LOOK)
 # =====================================================================
-# 5 tabs mapped out neatly across the center deck
 tab_labels = ["📝 Creative", "💻 Tech Code", "📢 Marketing", "📊 Analytics", "🎓 Academic"]
-t1, t2, t3, t4, t5 = st.tabs(tab_labels)
+tabs = st.tabs(tab_labels)
 
-# Mapping tabs to structured information definitions
 scenarios_mapping = {
     0: {"name": "Creative Writing 📝", "desc": "Stories, scripts, hooks, or aesthetic content arrays."},
     1: {"name": "Coding & Technical 💻", "desc": "Compilers, debugging sequences, and script formatting rules."},
@@ -158,40 +151,60 @@ scenarios_mapping = {
     4: {"name": "Academic & Research 🎓", "desc": "Literature breakdowns, conceptual simplification models."}
 }
 
-# Variable placeholder for checking which tab scope is selected
-active_index = 0
-current_tab = t1
+# Core interface renderer loop for handling active tab index shifts natively
+def render_workspace(active_index):
+    chosen_scope = scenarios_mapping[active_index]
+    
+    st.markdown(f"""
+        <div class="chat-card">
+            <div style="color:#00a884; font-size:0.85rem; text-transform:uppercase; font-weight:700; letter-spacing:1px;">Active Category</div>
+            <div style="font-size:1.3rem; color:#e9edef; font-weight:600; margin-top:2px;">{chosen_scope['name']}</div>
+            <div style="color:#8696a0; font-size:0.9rem; margin-top:4px;">{chosen_scope['desc']}</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-# Streamlit updates active states implicitly depending on content inside blocks
-with t1: active_index = 0
-with t2: active_index = 1
-with t3: active_index = 2
-with t4: active_index = 3
-with t5: active_index = 4
+    user_prompt = st.text_area(
+        "Type message...",
+        key=f"text_{active_index}",
+        height=120,
+        placeholder="Write your raw instructions here...",
+        label_visibility="collapsed"
+    )
 
-chosen_scope = scenarios_mapping[active_index]
+    st.write("")
+    
+    if st.button("Evaluate Structure ✔️", key=f"btn_{active_index}"):
+        if not user_prompt.strip():
+            st.warning("Please draft a text payload sequence first.")
+        elif GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE" or GEMINI_API_KEY.strip() == "":
+            st.error("🛑 API Key Missing: Please configure your Gemini API Key in the source code to get evaluation analysis.")
+        else:
+            with st.spinner("Analyzing message architecture..."):
+                res = run_evaluation(chosen_scope['name'], user_prompt)
+                
+                if "error" in res:
+                    st.error(res["error"])
+                else:
+                    st.markdown("<h3 style='color:#e9edef; font-size:1.3rem; margin-top:25px; margin-bottom:15px;'>📊 Analysis Matrix</h3>", unsafe_allow_html=True)
+                    
+                    score = res.get("score", 6)
+                    st.metric(label="Engineering Match Rate", value=f"{score * 10}% Optimal")
+                    st.progress(score / 10)
+                    st.write("")
+                    
+                    st.markdown("<p style='color:#00a884; font-weight:600; margin-bottom:6px;'>🟢 Structure Strengths (What's Working):</p>", unsafe_allow_html=True)
+                    for item in res.get("strengths", []):
+                        st.markdown(f'<div class="whatsapp-green-box">✓ {item}</div>', unsafe_allow_html=True)
+                    
+                    st.markdown("<p style='color:#ffc107; font-weight:600; margin-bottom:6px; margin-top:15px;'>🟡 Optimizations Needed (What's Missing):</p>", unsafe_allow_html=True)
+                    for item in res.get("weaknesses", []):
+                        st.markdown(f'<div class="whatsapp-yellow-box">⚠ {item}</div>', unsafe_allow_html=True)
+                    
+                    st.markdown("<p style='color:#e9edef; font-weight:600; margin-bottom:6px; margin-top:15px;'>✨ Re-Engineered Message Payload:</p>", unsafe_allow_html=True)
+                    st.code(res.get("improved_prompt", ""), language="text")
 
 # =====================================================================
-# 5. CHAT TEXTBOX COMPONENT WORKSPACE
-# =====================================================================
-st.markdown(f"""
-    <div class="chat-card">
-        <div style="color:#00a884; font-size:0.85rem; text-transform:uppercase; font-weight:700; letter-spacing:1px;">Active Category</div>
-        <div style="font-size:1.3rem; color:#e9edef; font-weight:600; margin-top:2px;">{chosen_scope['name']}</div>
-        <div style="color:#8696a0; font-size:0.9rem; margin-top:4px;">{chosen_scope['desc']}</div>
-    </div>
-""", unsafe_allow_html=True)
-
-user_prompt = st.text_area(
-    "Type message...",
-    height=120,
-    placeholder="Write your raw instructions here..."
-)
-
-st.write("")
-
-# =====================================================================
-# 6. LLM DISPATCH ENGINE
+# 5. LLM DISPATCH ENGINE
 # =====================================================================
 def run_evaluation(scope_name, raw_prompt):
     system_instruction = f"""
@@ -203,7 +216,7 @@ def run_evaluation(scope_name, raw_prompt):
     3. "weaknesses": A list of things missing or that need work.
     4. "improved_prompt": A perfectly optimized version of their prompt.
     
-    Ensure your response is ONLY the raw JSON object. No intro/outro text.
+    Ensure your response is ONLY the raw JSON object. No conversational fillers.
     """
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
@@ -211,39 +224,9 @@ def run_evaluation(scope_name, raw_prompt):
         clean = response.text.strip().replace("```json", "").replace("```", "")
         return json.loads(clean)
     except Exception as e:
-        return {"error": f"Execution delay timeout. Connection logs: {str(e)}"}
+        return {"error": f"Execution delay. Connection details: {str(e)}"}
 
-# Trigger Processing Matrix
-if st.button("Evaluate Structure ✔️"):
-    if not user_prompt.strip():
-        st.warning("Please draft a text payload sequence first.")
-    elif GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
-        st.error("Authentication Missing: Insert an active API string.")
-    else:
-        with st.spinner("Analyzing message architecture..."):
-            res = run_evaluation(chosen_scope['name'], user_prompt)
-            
-            if "error" in res:
-                st.error(res["error"])
-            else:
-                st.markdown("<h3 style='color:#e9edef; font-size:1.3rem; margin-top:25px; margin-bottom:15px;'>📊 Analysis Matrix</h3>", unsafe_allow_html=True)
-                
-                # Dynamic Grid
-                score = res.get("score", 6)
-                st.metric(label="Engineering Match Rate", value=f"{score * 10}% Optimal")
-                st.progress(score / 10)
-                st.write("")
-                
-                # Green Box for Strengths
-                st.markdown("<p style='color:#00a884; font-weight:600; margin-bottom:6px;'>🟢 Structure Strengths (What's Working):</p>", unsafe_allow_html=True)
-                for item in res.get("strengths", []):
-                    st.markdown(f'<div class="whatsapp-green-box">✓ {item}</div>', unsafe_allow_html=True)
-                
-                # Yellow Box for Weaknesses
-                st.markdown("<p style='color:#ffc107; font-weight:600; margin-bottom:6px; margin-top:15px;'>🟡 Optimizations Needed (What's Missing):</p>", unsafe_allow_html=True)
-                for item in res.get("weaknesses", []):
-                    st.markdown(f'<div class="whatsapp-yellow-box">⚠ {item}</div>', unsafe_allow_html=True)
-                
-                # Re-engineered output block
-                st.markdown("<p style='color:#e9edef; font-weight:600; margin-bottom:6px; margin-top:15px;'>✨ Re-Engineered Message Payload:</p>", unsafe_allow_html=True)
-                st.code(res.get("improved_prompt", ""), language="text")
+# Assigning modular workspaces into separate active tab sections
+for idx, tab_object in enumerate(tabs):
+    with tab_object:
+        render_workspace(idx)
