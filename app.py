@@ -3,16 +3,7 @@ import google.generativeai as genai
 import json
 
 # =====================================================================
-# 1. API CONFIGURATION
-# =====================================================================
-# Real testing ke liye yahan apni Gemini API Key paste karein
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE" 
-
-if GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE" and GEMINI_API_KEY.strip() != "":
-    genai.configure(api_key=GEMINI_API_KEY)
-
-# =====================================================================
-# 2. WHATSAPP-INSPIRED GREEN & AMBER UI (CSS INJECTION)
+# 1. PAGE CONFIGURATION & WHATSAPP-INSPIRED UI (CSS INJECTION)
 # =====================================================================
 st.set_page_config(page_title="PromptCraft Chat", layout="centered", page_icon="💬")
 
@@ -115,8 +106,8 @@ st.markdown("""
         border: none;
     }
     
-    /* Text Input Area */
-    textarea {
+    /* Text Area and Key Input styling */
+    textarea, input {
         background-color: #2a3942 !important;
         color: #e9edef !important;
         border: 1px solid #2a3942 !important;
@@ -126,16 +117,30 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. WHATSAPP APP BAR HEAD
+# 2. WHATSAPP APP BAR HEAD
 # =====================================================================
 st.markdown("""
     <div class="brand-header">
         <h1>Prompt<span>Craft</span> Chat</h1>
-        <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Select a scenario tab below to analyze your prompt structure</p>
+        <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Enter your API key below and select a scenario tab to evaluate prompts</p>
     </div>
 """, unsafe_allow_html=True)
 
-# NOTE: Yellow Missing API Banner Has Been Completely Removed From Here!
+# =====================================================================
+# 3. LIVE USER API KEY INPUT FIELD (Tijori Box)
+# =====================================================================
+# Yeh input field website ke screen par top par hi dikhegi
+user_api_key = st.text_input(
+    "🔑 Enter Your Gemini API Key:", 
+    type="password", 
+    placeholder="AIzaSy..."
+)
+
+# API key validation logic
+if user_api_key:
+    genai.configure(api_key=user_api_key)
+else:
+    st.info("💡 Pro-Tip: To test the app, please enter your Gemini API Key in the box above.")
 
 # =====================================================================
 # 4. HORIZONTAL SCENARIO TABS (WHATSAPP LOOK)
@@ -151,7 +156,7 @@ scenarios_mapping = {
     4: {"name": "Academic & Research 🎓", "desc": "Literature breakdowns, conceptual simplification models."}
 }
 
-# Core interface renderer loop for handling active tab index shifts natively
+# Core interface renderer loop
 def render_workspace(active_index):
     chosen_scope = scenarios_mapping[active_index]
     
@@ -174,10 +179,10 @@ def render_workspace(active_index):
     st.write("")
     
     if st.button("Evaluate Structure ✔️", key=f"btn_{active_index}"):
-        if not user_prompt.strip():
+        if not user_api_key:
+            st.error("🛑 API Key Missing: Pehle sabse upar apna Gemini API Key enter karein!")
+        elif not user_prompt.strip():
             st.warning("Please draft a text payload sequence first.")
-        elif GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE" or GEMINI_API_KEY.strip() == "":
-            st.error("🛑 API Key Missing: Please configure your Gemini API Key in the source code to get evaluation analysis.")
         else:
             with st.spinner("Analyzing message architecture..."):
                 res = run_evaluation(chosen_scope['name'], user_prompt)
@@ -226,7 +231,7 @@ def run_evaluation(scope_name, raw_prompt):
     except Exception as e:
         return {"error": f"Execution delay. Connection details: {str(e)}"}
 
-# Assigning modular workspaces into separate active tab sections
+# Assigning workspaces into separate tab sections
 for idx, tab_object in enumerate(tabs):
     with tab_object:
         render_workspace(idx)
