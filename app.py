@@ -224,7 +224,7 @@ def run_evaluation(scope_name, raw_prompt):
     Ensure your response is ONLY the raw JSON object. No conversational fillers.
     """
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("model/gemini-1.5-flash")
         response = model.generate_content(f"{system_instruction}\n\nUser's Prompt: {raw_prompt}")
         clean = response.text.strip().replace("```json", "").replace("```", "")
         return json.loads(clean)
