@@ -135,12 +135,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Missing API Banner (Minimalistic Amber Yellow alert)
-if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
-    st.markdown("""
-        <div style='background-color: rgba(255,193,7,0.15); border: 1px solid #ffc107; padding: 12px; border-radius: 10px; color: #ffe082; font-size:0.9rem; text-align:center; margin-bottom:20px;'>
-            ⚠️ <b>System Alert:</b> Please connect your Gemini API key string inside the script code.
-        </div>
-    """, unsafe_allow_html=True)
+#if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
+    #st.markdown("""
+        #<div style='background-color: rgba(255,193,7,0.15); border: 1px solid #ffc107; padding: 12px; border-radius: 10px; color: #ffe082; font-size:0.9rem; text-align:center; margin-bottom:20px;'>
+          $  ⚠️ <b>System Alert:</b> Please connect your Gemini API key string inside the script code.
+       # </div>
+ #   """, unsafe_allow_html=True)
 
 # =====================================================================
 # 4. HORIZONTAL SCENARIO TABS (WHATSAPP CALLS/CHATS LOOK)
