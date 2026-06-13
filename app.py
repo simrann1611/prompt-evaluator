@@ -3,18 +3,18 @@ import google.generativeai as genai
 import json
 
 # =====================================================================
-# 1. PAGE CONFIGURATION & WHATSAPP-INSPIRED UI (CSS INJECTION)
+# 1. PAGE CONFIGURATION & PREMIUM DARK GREEN UI (CSS)
 # =====================================================================
 st.set_page_config(page_title="PromptCraft Chat", layout="centered", page_icon="💬")
 
 st.markdown("""
     <style>
-    /* WhatsApp Dark Mode Aesthetic Background */
+    /* Dark Mode Aesthetic */
     .stApp {
         background-color: #0b141a;
     }
     
-    /* Header Container */
+    /* App Bar Header */
     .brand-header {
         background-color: #121b22;
         padding: 20px;
@@ -35,7 +35,7 @@ st.markdown("""
         color: #00a884;
     }
 
-    /* WhatsApp Style Navigation Tabs customization */
+    /* Horizontal Tabs Style */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: #121b22;
@@ -59,7 +59,7 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Chat Content Card */
+    /* Container Info Cards */
     .chat-card {
         background-color: #121b22;
         padding: 20px;
@@ -69,7 +69,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
     
-    /* Dynamic Feedback Boxes (Green & Yellow) */
+    /* Result Pill Styling */
     .whatsapp-green-box {
         background-color: rgba(0, 168, 132, 0.15);
         border: 1px solid #00a884;
@@ -88,7 +88,7 @@ st.markdown("""
         margin-bottom: 12px;
     }
     
-    /* Action Floating Button */
+    /* Execution Action Button */
     div.stButton > button:first-child {
         background-color: #00a884;
         color: #ffffff;
@@ -106,7 +106,7 @@ st.markdown("""
         border: none;
     }
     
-    /* Text Area and Key Input styling */
+    /* System Form Elements */
     textarea, input {
         background-color: #2a3942 !important;
         color: #e9edef !important;
@@ -117,17 +117,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. WHATSAPP APP BAR HEAD
+# 2. BRAND APP BAR NAVIGATION HEAD
 # =====================================================================
 st.markdown("""
     <div class="brand-header">
         <h1>Prompt<span>Craft</span> Chat</h1>
-        <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Enter your API key below, write your intent, and get direct final outputs</p>
+        <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Enter your API key below, select a workspace scenario, and generate optimized production results.</p>
     </div>
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. LIVE USER API KEY INPUT FIELD
+# 3. SECURE FRONT-END USER API KEY FIELD
 # =====================================================================
 user_api_key = st.text_input(
     "🔑 Enter Your Gemini API Key:", 
@@ -138,39 +138,39 @@ user_api_key = st.text_input(
 if user_api_key:
     genai.configure(api_key=user_api_key)
 else:
-    st.info("💡 Pro-Tip: To test the app, please enter your Gemini API Key in the box above.")
+    st.info("💡 Notice: Please configure your active Gemini API key in the field above to initialize live evaluations.")
 
 # =====================================================================
-# 4. HORIZONTAL SCENARIO TABS
+# 4. HORIZONTAL WORKSPACE SCENARIO MATRIX TABS
 # =====================================================================
 tab_labels = ["📝 Creative", "💻 Tech Code", "📢 Marketing", "📊 Analytics", "🎓 Academic"]
 tabs = st.tabs(tab_labels)
 
 scenarios_mapping = {
-    0: {"name": "Creative Writing 📝", "desc": "Stories, scripts, hooks, or aesthetic content arrays."},
-    1: {"name": "Coding & Technical 💻", "desc": "Compilers, debugging sequences, and script formatting rules."},
-    2: {"name": "Marketing & Copywriting 📢", "desc": "Conversion copywriting, active campaigns, and tone setting."},
-    3: {"name": "Data & Business Analysis 📊", "desc": "Metric parameters, summary trends, and computational requests."},
-    4: {"name": "Academic & Research 🎓", "desc": "Literature breakdowns, conceptual simplification models."}
+    0: {"name": "Creative Writing 📝", "desc": "Design compelling copy structures, blogs, narratives, or creative scripts."},
+    1: {"name": "Coding & Technical 💻", "desc": "Optimize logic structures, generate ultra-clean scripts, and analyze algorithm runtimes."},
+    2: {"name": "Marketing & Copywriting 📢", "desc": "Engine high-conversion target audience ad scripts, hooks, and email loops."},
+    3: {"name": "Data & Business Analysis 📊", "desc": "Process data constraints, chart parameters, dynamic summaries, and data metrics."},
+    4: {"name": "Academic & Research 🎓", "desc": "Simplify highly dense logic frameworks, structures, and foundational research variables."}
 }
 
-# Core interface renderer loop
+# Workspace Layout Generator
 def render_workspace(active_index):
     chosen_scope = scenarios_mapping[active_index]
     
     st.markdown(f"""
         <div class="chat-card">
-            <div style="color:#00a884; font-size:0.85rem; text-transform:uppercase; font-weight:700; letter-spacing:1px;">Active Category</div>
+            <div style="color:#00a884; font-size:0.85rem; text-transform:uppercase; font-weight:700; letter-spacing:1px;">Active Category Workspace</div>
             <div style="font-size:1.3rem; color:#e9edef; font-weight:600; margin-top:2px;">{chosen_scope['name']}</div>
-            <div style="color:#8696a0; font-size:0.9rem; margin-top:4px;">{chosen_scope['desc']}</div>
+            <div style="color:#8696a0; font-size:0.9rem; margin-top:4px;">Scope: {chosen_scope['desc']}</div>
         </div>
     """, unsafe_allow_html=True)
 
     user_prompt = st.text_area(
-        "Type message...",
+        "Type your intent here...",
         key=f"text_{active_index}",
         height=120,
-        placeholder="Write your raw instructions here...",
+        placeholder="Provide descriptions or draft raw instructions here...",
         label_visibility="collapsed"
     )
 
@@ -178,12 +178,12 @@ def render_workspace(active_index):
     
     if st.button("Evaluate & Generate Output ✔️", key=f"btn_{active_index}"):
         if not user_api_key:
-            st.error("🛑 API Key Missing: Pehle sabse upar apna Gemini API Key enter karein!")
+            st.error("🛑 Action Halted: Missing active API Key configuration field at the top workspace container.")
         elif not user_prompt.strip():
-            st.warning("Please draft a text payload sequence first.")
+            st.warning("Warning: Prompt description input field cannot remain empty.")
         else:
-            with st.spinner("Analyzing structures and rendering production files..."):
-                # Phase 1: Matrix Metrics Evaluation Call
+            with st.spinner("Processing architectural metrics and compilation loops..."):
+                # Phase 1: Structured Evaluation Execution Call
                 res = run_evaluation(chosen_scope['name'], user_prompt)
                 
                 if "error" in res:
@@ -192,50 +192,49 @@ def render_workspace(active_index):
                     st.markdown("<h3 style='color:#e9edef; font-size:1.3rem; margin-top:25px; margin-bottom:15px;'>📊 Analysis Matrix</h3>", unsafe_allow_html=True)
                     
                     score = res.get("score", 6)
-                    st.metric(label="Engineering Match Rate", value=f"{score * 10}% Optimal")
+                    st.metric(label="Prompt Engineering Match Rate", value=f"{score * 10}% Optimal")
                     st.progress(score / 10)
                     st.write("")
                     
-                    st.markdown("<p style='color:#00a884; font-weight:600; margin-bottom:6px;'>🟢 Structure Strengths (What's Working):</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='color:#00a884; font-weight:600; margin-bottom:6px;'>🟢 Structural Strengths (Working Components):</p>", unsafe_allow_html=True)
                     for item in res.get("strengths", []):
                         st.markdown(f'<div class="whatsapp-green-box">✓ {item}</div>', unsafe_allow_html=True)
                     
-                    st.markdown("<p style='color:#ffc107; font-weight:600; margin-bottom:6px; margin-top:15px;'>🟡 Optimizations Needed (What's Missing):</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='color:#ffc107; font-weight:600; margin-bottom:6px; margin-top:15px;'>🟡 Optimizations Required (Missing Parameters):</p>", unsafe_allow_html=True)
                     for item in res.get("weaknesses", []):
                         st.markdown(f'<div class="whatsapp-yellow-box">⚠ {item}</div>', unsafe_allow_html=True)
                     
-                    st.markdown("<p style='color:#e9edef; font-weight:600; margin-bottom:6px; margin-top:15px;'>✨ Re-Engineered Message Payload:</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='color:#e9edef; font-weight:600; margin-bottom:6px; margin-top:15px;'>✨ Re-Engineered Message Structure:</p>", unsafe_allow_html=True)
                     improved_prompt_text = res.get("improved_prompt", "")
                     st.code(improved_prompt_text, language="text")
                     
-                    # 🚀 NEW PHASE: Direct Code/Content Generation Box
+                    # Phase 2: Short-Form Output Execution Box
                     st.markdown("---")
                     st.markdown("<h3 style='color:#00a884; font-size:1.3rem; margin-top:20px; margin-bottom:10px;'>🚀 Direct Code & Content Output</h3>", unsafe_allow_html=True)
-                    st.write("Aapke re-engineered prompt ka use karke AI ne direct ye output ready kiya hai:")
+                    st.write("Production material generated directly via your re-engineered prompt framework:")
                     
-                    # Direct final answer call using the improved prompt version
-                    final_execution_output = generate_final_content(improved_prompt_text)
+                    final_execution_output = generate_final_content(chosen_scope['name'], improved_prompt_text)
                     
-                    # Dynamic script language selection for syntax coloring
+                    # Coding syntax selection
                     code_lang = "python" if active_index == 1 else "text"
                     st.code(final_execution_output, language=code_lang)
                     
                     st.balloons()
 
 # =====================================================================
-# 5. CORE LLM DISPATCH ENGINES
+# 5. INTENSITY CONDITIONED LLM ENGINES (SHORTEST COMPILATION LOGIC)
 # =====================================================================
 def run_evaluation(scope_name, raw_prompt):
     system_instruction = f"""
     You are an expert Prompt Engineer. Analyze the user's prompt for the scenario: '{scope_name}'.
-    Evaluate it based on Clarity, Context, and Constraints.
+    Evaluate it strictly based on Clarity, Context, and Constraints.
     Provide the response in a strict valid JSON format with the following keys:
     1. "score": An integer out of 10.
-    2. "strengths": A list of things done well.
-    3. "weaknesses": A list of things missing or that need work.
+    2. "strengths": A list of things done well in English.
+    3. "weaknesses": A list of things missing or that need work in English.
     4. "improved_prompt": A perfectly optimized version of their prompt.
     
-    Ensure your response is ONLY the raw JSON object. No conversational fillers.
+    CRITICAL: Ensure your response is ONLY the raw JSON object. No conversational fillers.
     """
     try:
         model = genai.GenerativeModel("gemini-2.5-flash")
@@ -245,20 +244,28 @@ def run_evaluation(scope_name, raw_prompt):
     except Exception as e:
         return {"error": f"Execution delay. Connection details: {str(e)}"}
 
-def generate_final_content(optimized_prompt):
+def generate_final_content(scope_name, optimized_prompt):
     """
-    Yeh function optimized prompt ko le kar direct code/content compute karega 
-    aur return karega, taaki user ko seedhe final material mil sake.
+    Evaluates the optimized engineered prompt.
+    CRITICAL CONSTRAINT: If the category is related to code, it strictly enforces the AI 
+    to write the absolute SHORTEST, minimal, compact, and optimized code possible. No fluff.
     """
+    # Enforces absolute shortest logic constraints
+    shortest_code_instruction = (
+        "You are a master compiler. If generating code, write the absolute SHORTEST, cleanest, "
+        "and most minimal production-ready lines of code possible. Avoid unnecessary verbose comments, "
+        "remove duplicate logical blocks, and condense the algorithm to minimal syntax without losing core functionality."
+    )
+    
     try:
         model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(optimized_prompt)
-        # Markdown backticks code formatting filter remove karne ke liye custom utility
+        combined_payload = f"{shortest_code_instruction}\n\nExecute this Prompt:\n{optimized_prompt}"
+        response = model.generate_content(combined_payload)
         return response.text.replace("```python", "").replace("```", "").strip()
     except Exception as e:
         return f"Output Generation Stopped. Logs: {str(e)}"
 
-# Assigning workspaces into separate tab sections
+# Thread isolation dispatcher
 for idx, tab_object in enumerate(tabs):
     with tab_object:
         render_workspace(idx)
