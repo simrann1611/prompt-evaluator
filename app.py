@@ -1,6 +1,9 @@
 import streamlit as st
 import google.generativeai as genai
 import json
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime
 
 # =====================================================================
 # 1. PAGE CONFIGURATION & PREMIUM DARK GREEN UI (CSS)
@@ -88,8 +91,8 @@ st.markdown("""
         margin-bottom: 12px;
     }
     
-    /* Execution Action Button */
-    div.stButton > button:first-child {
+    /* Execution Action Buttons styling */
+    div.stButton > button:first-child, div.stDownloadButton > button:first-child {
         background-color: #00a884;
         color: #ffffff;
         border: none;
@@ -101,7 +104,7 @@ st.markdown("""
         box-shadow: 0 3px 10px rgba(0,168,132,0.3);
         transition: background 0.2s;
     }
-    div.stButton > button:first-child:hover {
+    div.stButton > button:first-child:hover, div.stDownloadButton > button:first-child:hover {
         background-color: #008f72;
         border: none;
     }
@@ -117,7 +120,32 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. BRAND APP BAR NAVIGATION HEAD
+# 2. AUTOMATED BACKEND CLOUD STORAGE LOGGING
+# =====================================================================
+def log_data_to_sheets(category, user_prompt, improved_prompt, final_output):
+    """
+    Authenticates securely using service account keys and commits active data rows 
+    straight to the cloud Google Sheet to prevent structural history erasure.
+    """
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+        client = gspread.authorize(creds)
+        
+        # Connect explicitly to the target database sheet layout
+        sheet = client.open("PromptCraft_Database").sheet1
+        
+        # Structure the persistent array log parameters
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        row_data = [timestamp, category, user_prompt, improved_prompt, final_output]
+        
+        sheet.append_row(row_data)
+    except Exception as e:
+        # System alert safely outputted to side terminal if verification links fail
+        st.sidebar.warning(f"Database Logging Event: {str(e)}")
+
+# =====================================================================
+# 3. BRAND APP BAR NAVIGATION HEAD
 # =====================================================================
 st.markdown("""
     <div class="brand-header">
@@ -127,7 +155,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 3. SECURE FRONT-END USER API KEY FIELD
+# 4. SECURE FRONT-END USER API KEY FIELD
 # =====================================================================
 user_api_key = st.text_input(
     "🔑 Enter Your Gemini API Key:", 
@@ -141,7 +169,7 @@ else:
     st.info("💡 Notice: Please configure your active Gemini API key in the field above to initialize live evaluations.")
 
 # =====================================================================
-# 4. HORIZONTAL WORKSPACE SCENARIO MATRIX TABS
+# 5. HORIZONTAL WORKSPACE SCENARIO MATRIX TABS
 # =====================================================================
 tab_labels = ["📝 Creative", "💻 Tech Code", "📢 Marketing", "📊 Analytics", "🎓 Academic"]
 tabs = st.tabs(tab_labels)
@@ -219,10 +247,25 @@ def render_workspace(active_index):
                     code_lang = "python" if active_index == 1 else "text"
                     st.code(final_execution_output, language=code_lang)
                     
+                    st.write("")
+                    
+                    # Download Output File Button
+                    file_extension = "py" if active_index == 1 else "txt"
+                    st.download_button(
+                        label="📥 Download Output File",
+                        data=final_execution_output,
+                        file_name=f"promptcraft_output.{file_extension}",
+                        mime="text/plain",
+                        key=f"dl_{active_index}"
+                    )
+                    
+                    # Automated cloud row tracking execution call
+                    log_data_to_sheets(chosen_scope['name'], user_prompt, improved_prompt_text, final_execution_output)
+                    
                     st.balloons()
 
 # =====================================================================
-# 5. INTENSITY CONDITIONED LLM ENGINES (SHORTEST COMPILATION LOGIC)
+# 6. INTENSITY CONDITIONED LLM ENGINES (SHORTEST COMPILATION LOGIC)
 # =====================================================================
 def run_evaluation(scope_name, raw_prompt):
     system_instruction = f"""
@@ -250,7 +293,6 @@ def generate_final_content(scope_name, optimized_prompt):
     CRITICAL CONSTRAINT: If the category is related to code, it strictly enforces the AI 
     to write the absolute SHORTEST, minimal, compact, and optimized code possible. No fluff.
     """
-    # Enforces absolute shortest logic constraints
     shortest_code_instruction = (
         "You are a master compiler. If generating code, write the absolute SHORTEST, cleanest, "
         "and most minimal production-ready lines of code possible. Avoid unnecessary verbose comments, "
