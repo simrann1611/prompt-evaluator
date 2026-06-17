@@ -130,48 +130,115 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. LOGIN SECURITY STATE HANDLING
+# 2. GOOGLE SHEETS CONNECTION FOR USER AUTHENTICATION
+# =====================================================================
+def get_sheets_client():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+    return gspread.authorize(creds)
+
+def register_user(new_user, new_pass):
+    try:
+        client = get_sheets_client()
+        # Open or create a second worksheet inside your Google Sheet for users
+        db_sheet = client.open("PromptCraft_Database")
+        
+        try:
+            user_sheet = db_sheet.worksheet("Users")
+        except gspread.exceptions.WorksheetNotFound:
+            # Create the "Users" sheet if it doesn't exist
+            user_sheet = db_sheet.add_worksheet(title="Users", rows="100", cols="2")
+            user_sheet.append_row(["Username", "Password"])
+            
+        # Check if username already exists
+        all_users = user_sheet.col_values(1)
+        if new_user in all_users:
+            return "exists"
+            
+        user_sheet.append_row([new_user, new_pass])
+        return "success"
+    except Exception as e:
+        return str(e)
+
+def check_user_login(user, password):
+    try:
+        client = get_sheets_client()
+        db_sheet = client.open("PromptCraft_Database")
+        try:
+            user_sheet = db_sheet.worksheet("Users")
+        except gspread.exceptions.WorksheetNotFound:
+            return False
+            
+        records = user_sheet.get_all_records()
+        for record in records:
+            if str(record.get("Username")) == user and str(record.get("Password")) == password:
+                return True
+        return False
+    except Exception:
+        return False
+
+# =====================================================================
+# 3. LOGIN & REGISTRATION SECURITY STATE HANDLING
 # =====================================================================
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
-# Render Login Page if User is Not Authenticated
 if not st.session_state["logged_in"]:
     st.markdown("""
         <div class="brand-header">
             <h1>Prompt<span>Craft</span> Chat</h1>
-            <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Secure Portal Gate. Please sign in to access workspace tools.</p>
+            <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Secure Portal Gate. Please sign in or register a new profile.</p>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    st.subheader("🔐 Authorization Portal")
+    # Selection tabs for logging in vs registering a new account
+    auth_mode = st.tabs(["🔐 Sign In", "📝 Create Account"])
     
-    username = st.text_input("Username", placeholder="admin")
-    password = st.text_input("Password", type="password", placeholder="••••••••")
-    
-    st.write("")
-    if st.button("Secure Login →"):
-        # Explicit credentials setup (Perfect for project validation review)
-        if username == "admin" and password == "promptcraft123":
-            st.session_state["logged_in"] = True
-            st.success("Access Granted! Loading system parameters...")
-            st.rerun()
-        else:
-            st.error("Invalid credentials configuration profile. Access Rejected.")
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.stop()  # Complete execution lock if credentials are wrong
+    with auth_mode[0]:
+        st.markdown('<div class="login-container">', unsafe_allow_html=True)
+        st.subheader("Login to Workspace")
+        login_username = st.text_input("Username", key="login_user", placeholder="Enter your username")
+        login_password = st.text_input("Password", type="password", key="login_pass", placeholder="Enter your password")
+        
+        st.write("")
+        if st.button("Secure Login →", key="login_btn"):
+            if check_user_login(login_username, login_password):
+                st.session_state["logged_in"] = True
+                st.success("Access Granted! Loading system parameters...")
+                st.rerun()
+            else:
+                st.error("Invalid credentials profile. Access Rejected.")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with auth_mode[1]:
+        st.markdown('<div class="login-container">', unsafe_allow_html=True)
+        st.subheader("Register Custom Credentials")
+        reg_username = st.text_input("Choose Username", key="reg_user", placeholder="e.g., simran_16")
+        reg_password = st.text_input("Choose Password", type="password", key="reg_pass", placeholder="Create a secure password")
+        
+        st.write("")
+        if st.button("Register & Save Profile ✔️", key="reg_btn"):
+            if not reg_username.strip() or not reg_password.strip():
+                st.warning("Fields cannot remain empty.")
+            else:
+                status = register_user(reg_username.strip(), reg_password.strip())
+                if status == "success":
+                    st.success("Account created successfully! You can now switch to the 'Sign In' tab to log in.")
+                elif status == "exists":
+                    st.error("This username is already taken. Please choose a different one.")
+                else:
+                    st.error(f"Registration Error: {status}")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    st.stop()  # Stop application from rendering further until logged in
 
 # =====================================================================
-# 3. BACKEND DATA LOGGING (GOOGLE SHEETS SYSTEM)
+# 4. BACKEND PROMPT DATA LOGGING (PromptCraft_Database -> Sheet1)
 # =====================================================================
 def log_data_to_sheets(category, user_prompt, improved_prompt, final_output):
     try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-        client = gspread.authorize(creds)
+        client = get_sheets_client()
         sheet = client.open("PromptCraft_Database").sheet1
-        
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         row_data = [timestamp, category, user_prompt, improved_prompt, final_output]
         sheet.append_row(row_data)
@@ -179,7 +246,7 @@ def log_data_to_sheets(category, user_prompt, improved_prompt, final_output):
         st.sidebar.warning(f"Database Logging Event: {str(e)}")
 
 # =====================================================================
-# 4. BRAND MAIN APPLICATION HEAD (Shown only after login)
+# 5. BRAND MAIN APPLICATION HEAD (Shown only after login)
 # =====================================================================
 st.markdown("""
     <div class="brand-header">
@@ -188,13 +255,12 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Logout option panel configuration on workspace side container
 if st.sidebar.button("🔒 Secure Sign Out"):
     st.session_state["logged_in"] = False
     st.rerun()
 
 # =====================================================================
-# 5. SECURE FRONT-END USER API KEY FIELD
+# 6. SECURE FRONT-END USER API KEY FIELD
 # =====================================================================
 user_api_key = st.text_input(
     "🔑 Enter Your Gemini API Key:", 
@@ -208,7 +274,7 @@ else:
     st.info("💡 Notice: Please configure your active Gemini API key in the field above to initialize live evaluations.")
 
 # =====================================================================
-# 6. HORIZONTAL WORKSPACE SCENARIO TABS
+# 7. HORIZONTAL WORKSPACE SCENARIO TABS
 # =====================================================================
 tab_labels = ["📝 Creative", "💻 Tech Code", "📢 Marketing", "📊 Analytics", "🎓 Academic"]
 tabs = st.tabs(tab_labels)
@@ -294,7 +360,7 @@ def render_workspace(active_index):
                     st.balloons()
 
 # =====================================================================
-# 7. INTENSITY CONDITIONED LLM ENGINES
+# 8. INTENSITY CONDITIONED LLM ENGINES
 # =====================================================================
 def run_evaluation(scope_name, raw_prompt):
     system_instruction = f"""
