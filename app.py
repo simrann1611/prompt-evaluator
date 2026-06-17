@@ -35,7 +35,7 @@ def get_sheets_client():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     # Yeh line ab sidhe Streamlit dashboard ke settings se secure credentials uthaegi
     creds_dict = json.loads(st.secrets["gcp_service_account"])
-    creds = ServiceAccountCredentials.from_json_key_dict(creds_dict, scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     return gspread.authorize(creds)
 
 def register_user(new_user, new_pass):
