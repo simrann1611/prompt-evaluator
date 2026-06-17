@@ -140,17 +140,14 @@ def get_sheets_client():
 def register_user(new_user, new_pass):
     try:
         client = get_sheets_client()
-        # Open or create a second worksheet inside your Google Sheet for users
         db_sheet = client.open("PromptCraft_Database")
         
         try:
             user_sheet = db_sheet.worksheet("Users")
         except gspread.exceptions.WorksheetNotFound:
-            # Create the "Users" sheet if it doesn't exist
             user_sheet = db_sheet.add_worksheet(title="Users", rows="100", cols="2")
             user_sheet.append_row(["Username", "Password"])
             
-        # Check if username already exists
         all_users = user_sheet.col_values(1)
         if new_user in all_users:
             return "exists"
@@ -187,16 +184,36 @@ if not st.session_state["logged_in"]:
     st.markdown("""
         <div class="brand-header">
             <h1>Prompt<span>Craft</span> Chat</h1>
-            <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Secure Portal Gate. Please sign in or register a new profile.</p>
+            <p style="color: #8696a0; margin: 5px 0 0 0; font-size:0.95rem;">Secure Portal Gate. Please create an account or log in to continue.</p>
         </div>
     """, unsafe_allow_html=True)
     
-    # Selection tabs for logging in vs registering a new account
-    auth_mode = st.tabs(["🔐 Sign In", "📝 Create Account"])
+    # Swapped names: First tab is now Sign Up, second tab is Log In
+    auth_mode = st.tabs(["📝 Sign Up", "🔐 Log In"])
     
     with auth_mode[0]:
         st.markdown('<div class="login-container">', unsafe_allow_html=True)
-        st.subheader("Login to Workspace")
+        st.subheader("Create a New Account (First Time Users)")
+        reg_username = st.text_input("Choose Username", key="reg_user", placeholder="e.g., user123")
+        reg_password = st.text_input("Choose Password", type="password", key="reg_pass", placeholder="Create a secure password")
+        
+        st.write("")
+        if st.button("Register & Save Profile ✔️", key="reg_btn"):
+            if not reg_username.strip() or not reg_password.strip():
+                st.warning("Fields cannot remain empty.")
+            else:
+                status = register_user(reg_username.strip(), reg_password.strip())
+                if status == "success":
+                    st.success("Account created successfully! You can now switch to the 'Log In' tab to access your workspace.")
+                elif status == "exists":
+                    st.error("This username is already taken. Please choose a different one.")
+                else:
+                    st.error(f"Registration Error: {status}")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with auth_mode[1]:
+        st.markdown('<div class="login-container">', unsafe_allow_html=True)
+        st.subheader("Log In to Existing Workspace")
         login_username = st.text_input("Username", key="login_user", placeholder="Enter your username")
         login_password = st.text_input("Password", type="password", key="login_pass", placeholder="Enter your password")
         
@@ -210,27 +227,7 @@ if not st.session_state["logged_in"]:
                 st.error("Invalid credentials profile. Access Rejected.")
         st.markdown('</div>', unsafe_allow_html=True)
         
-    with auth_mode[1]:
-        st.markdown('<div class="login-container">', unsafe_allow_html=True)
-        st.subheader("Register Custom Credentials")
-        reg_username = st.text_input("Choose Username", key="reg_user", placeholder="e.g., simran_16")
-        reg_password = st.text_input("Choose Password", type="password", key="reg_pass", placeholder="Create a secure password")
-        
-        st.write("")
-        if st.button("Register & Save Profile ✔️", key="reg_btn"):
-            if not reg_username.strip() or not reg_password.strip():
-                st.warning("Fields cannot remain empty.")
-            else:
-                status = register_user(reg_username.strip(), reg_password.strip())
-                if status == "success":
-                    st.success("Account created successfully! You can now switch to the 'Sign In' tab to log in.")
-                elif status == "exists":
-                    st.error("This username is already taken. Please choose a different one.")
-                else:
-                    st.error(f"Registration Error: {status}")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    st.stop()  # Stop application from rendering further until logged in
+    st.stop()
 
 # =====================================================================
 # 4. BACKEND PROMPT DATA LOGGING (PromptCraft_Database -> Sheet1)
